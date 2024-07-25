@@ -62,6 +62,9 @@ def register_app(instance):
   return(app)
 
 def auth(app):
+  if 'access_token' in app:
+    return
+
   print('Please visit the following URL and enter the code:')
   print(f'https://{app["instance"]}/oauth/authorize?response_type=code&client_id={app["client_id"]}&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=read+write')
   app['code'] = input("Code:")
@@ -79,6 +82,9 @@ def auth(app):
   j = r.json()
 
   app['access_token'] = j['access_token']
+
+  with open('./.app', 'w') as outfile:
+    json.dump(app, outfile)
 
 
 def me(app):
