@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # Bgg to NeoDB by Chris Young 2024
 
+import os
 import sys
 import time
 import xmltodict
@@ -13,6 +14,7 @@ def get_args():
              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("bgguser", help="BGG Username")
   parser.add_argument("-i", "--instance", help="NeoDB Instance", default="neodb.social")
+  parser.add_argument("-c", "--configfile", help="Config filename", default="~/.config/bgg-to-neodb.json")
   args = parser.parse_args()
   a = vars(args)
 
@@ -54,11 +56,13 @@ def get_bg(id):
 ### start ###
 a = get_args()
 
+cfgfile = os.path.expanduser(a['configfile'])
+
 r = get_bgg_collection(a['bgguser'])
 bgg_coll = xmltodict.parse(r.text)
 
-app = neodb.register_app(a['instance'])
-neodb.auth(app)
+app = neodb.register_app(a['instance'], cfgfile)
+neodb.auth(app, cfgfile)
 
 collections = neodb.collection_get(app)
 uuid = None

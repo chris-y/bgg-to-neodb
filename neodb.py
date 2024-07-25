@@ -34,14 +34,12 @@ def call_api_post(app, auth, endpoint, data):
   return(r.json())
 
 
-
-
-def register_app(instance):
+def register_app(instance, cfgfile):
   try:
-    with open('./.app') as f:
+    with open(cfgfile) as f:
       app = json.load(f)
       if(app['instance'] != instance):
-        print(f'Instance specified on command line ({instance}) does not match that where app is registered ({app["instance"]}).\nIf you want to change your instance please delete .app')
+        print(f'Instance specified on command line ({instance}) does not match that where app is registered ({app["instance"]}).\nIf you want to change your instance please delete {cfgfile} or specify a different config with -c')
         sys.exit(1)
       return(app)
   except Exception as e:
@@ -56,21 +54,18 @@ def register_app(instance):
   app = r.json()
   app['instance'] = instance
 
-  with open('./.app', 'w') as outfile:
+  with open(cfgfile, 'w') as outfile:
     json.dump(app, outfile)
 
   return(app)
 
-def auth(app):
+def auth(app, cfgfile):
   if 'access_token' in app:
     return
 
   print('Please visit the following URL and enter the code:')
   print(f'https://{app["instance"]}/oauth/authorize?response_type=code&client_id={app["client_id"]}&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=read+write')
   app['code'] = input("Code:")
-
-  #with open('./.app', 'w') as outfile:
-  #  json.dump(app, outfile)
 
   data = {"client_id": app['client_id'],
           "client_secret": app['client_secret'],
@@ -83,7 +78,7 @@ def auth(app):
 
   app['access_token'] = j['access_token']
 
-  with open('./.app', 'w') as outfile:
+  with open(cfgfile, 'w') as outfile:
     json.dump(app, outfile)
 
 
