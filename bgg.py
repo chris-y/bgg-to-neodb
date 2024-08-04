@@ -20,7 +20,7 @@ def get_args():
 
   return(a)
 
-def get_bgg_collection(user):
+def get_bgg_coll(user):
   data = {"username": user,
           "own": 1,
           "excludesubtype": "boardgameexpansion"}
@@ -37,7 +37,17 @@ def get_bgg_collection(user):
       print(f'unknown status getting collection {r.status_code}: {r.text}')
       sys.exit(1)
 
-  return(r)
+  return r
+
+def get_bgg_collection(user):
+  r = get_bgg_coll(user)
+  return xmltodict.parse(r.text)
+
+def get_plays(user):
+  data = { "username": user } # mindate=2024-MM-DD
+  r = requests.get(f'https://boardgamegeek.com/xmlapi2/plays', params = data)
+  # gets 1 page, check total
+  return xmltodict.parse(r.text)
 
 def get_bg(id):
   r = requests.get(f'https://api.geekdo.com/xmlapi/boardgame/{id}')
@@ -58,8 +68,13 @@ a = get_args()
 
 cfgfile = os.path.expanduser(a['configfile'])
 
-r = get_bgg_collection(a['bgguser'])
-bgg_coll = xmltodict.parse(r.text)
+bgg_coll = get_bgg_collection(a['bgguser'])
+
+#bgg_plays = get_plays(a['bgguser'])['plays']
+#print(f'{bgg_plays["@page"]}/{bgg_plays["@total"]}')
+
+#for play in bgg_plays['play']:
+#  print(play)
 
 app = neodb.register_app(a['instance'], cfgfile)
 neodb.auth(app, cfgfile)
