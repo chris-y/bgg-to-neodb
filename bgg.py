@@ -15,6 +15,8 @@ def get_args():
   parser.add_argument("bgguser", help="BGG Username")
   parser.add_argument("-i", "--instance", help="NeoDB Instance", default="neodb.social")
   parser.add_argument("-c", "--configfile", help="Config filename", default="~/.config/bgg-to-neodb.json")
+  parser.add_argument("-b", "--boardgames", help="Import boardgames to NeoDB collection", action="store_true")
+  parser.add_argument("-p", "--plays", help="Import plays to NeoDB", action="store_true")
   args = parser.parse_args()
   a = vars(args)
 
@@ -63,39 +65,59 @@ def get_bg(id):
 
   return(r)
 
+def neodb_lookup_bgg_item(app, id):
+    url = f'https://boardgamegeek.com/boardgame/{id}'
+    print(f'Lookup for {url}')
+
+    return neodb.catalog_fetch(app, url)
+
+def bgg_to_neodb_collection(user, app):
+  bgg_coll = get_bgg_collection(user)
+  collections = neodb.collection_get(app)
+  uuid = None
+
+  if collections['count'] > 0:
+    for c in collections['data']:
+      if c['title'] == 'Board Games':
+        uuid = c['uuid']
+
+  if uuid is None:
+    print('No board games collection found, creating...')
+    collection = neodb.collection_create(app, "Board Games", "Board Games imported from BGG", 2)
+    uuid = collection['uuid']
+
+  i = 0
+  t = len(bgg_coll['items']['item'])
+
+  for bg in bgg_coll['items']['item']:
+    i += 1
+    print(f'importing {i} of {t}')
+    r = neodb_lookup_bgg_item(app, bg['@objectid'])
+    neodb.collection_add_item(app, uuid, r['uuid'])
+
+def bgg_to_neodb_plays(user, app):
+  bgg_plays = get_plays(a['bgguser'])['plays']
+  print(f'{bgg_plays["@page"]}/{bgg_plays["@total"]}')
+
+  for play in bgg_plays['play']:
+    r = neodb_lookup_bgg_item(app, play['item']['@objectid'])
+    item = r['uuid']
+    neodb.mark_item(app, item, 'progress', play['@date'])
+    neodb.mark_item(app, item, 'complete', play['@date'])
+
 ### start ###
 a = get_args()
 
 cfgfile = os.path.expanduser(a['configfile'])
-
-bgg_coll = get_bgg_collection(a['bgguser'])
-
-#bgg_plays = get_plays(a['bgguser'])['plays']
-#print(f'{bgg_plays["@page"]}/{bgg_plays["@total"]}')
-
-#for play in bgg_plays['play']:
-#  print(play)
-
 app = neodb.register_app(a['instance'], cfgfile)
 neodb.auth(app, cfgfile)
 
-collections = neodb.collection_get(app)
-uuid = None
+if a['boardgames'] is True:
+  print('Importing boardgames collection')
+  print('-------------------------------')
+  bgg_to_neodb_collection(a['bgguser'], app)
 
-if collections['count'] > 0:
-  for c in collections['data']:
-    if c['title'] == 'Board Games':
-      uuid = c['uuid']
-
-if uuid is None:
-  print('No board games collection found, creating...')
-  collection = neodb.collection_create(app, "Board Games", "Board Games imported from BGG", 2)
-  uuid = collection['uuid']
-
-for bg in bgg_coll['items']['item']:
-  url = f'https://boardgamegeek.com/boardgame/{bg["@objectid"]}'
-  print(f'Importing {url}')
-
-  r = neodb.catalog_fetch(app, url)
-
-  neodb.collection_add_item(app, uuid, r['uuid'])
+if a['plays'] is True:
+  print('Importing plays')
+  print('---------------')
+  bgg_to_neodb_plays(a['bgguser'], app)

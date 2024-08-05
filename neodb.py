@@ -107,4 +107,11 @@ def catalog_fetch(app, url):
 
   return call_api_get(app, False, 'catalog/fetch', data)
 
+def mark_item(app, item, shelf, date):
+  data = {"shelf_type": shelf,
+          "visibility": 1,
+          "created_time": f'{date}T00:00:00Z',
+          "post_to_fediverse": 'false',
+          "tags": ["boardgames"]}
 
+  return call_api_post(app, True, f'me/shelf/item/{item}', data)
