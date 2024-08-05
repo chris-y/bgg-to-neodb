@@ -9,6 +9,7 @@ import xmltodict
 import requests
 import neodb
 import argparse
+from datetime import datetime,timedelta
 
 def get_args():
   parser = argparse.ArgumentParser(description="BGG to NeoDB",
@@ -110,8 +111,14 @@ def bgg_to_neodb_plays(user, app):
       print(f'Importing {play_num} of {bgg_plays["@total"]}')
       r = neodb_lookup_bgg_item(app, play['item']['@objectid'])
       item = r['uuid']
-      neodb.mark_item(app, item, 'progress', play['@date'])
-      neodb.mark_item(app, item, 'complete', play['@date'])
+      date = datetime.strptime(play['@date'], "%Y-%m-%d")
+      neodb.mark_item(app, item, 'progress', date)
+      # add length so complete appears after progress
+      len = int(play['@length'])
+      if len == 0:
+        len = 1
+      date += timedelta(minutes = len)
+      neodb.mark_item(app, item, 'complete', date)
 
     page -= 1
 

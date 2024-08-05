@@ -5,6 +5,7 @@ import time
 import requests
 import json
 import sys
+import datetime
 
 def call_api_get(app, auth, endpoint, data):
   if auth is True:
@@ -107,10 +108,11 @@ def catalog_fetch(app, url):
 
   return call_api_get(app, False, 'catalog/fetch', data)
 
-def mark_item(app, item, shelf, date):
+def mark_item(app, item, shelf, dt):
+  time = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
   data = {"shelf_type": shelf,
           "visibility": 0,
-          "created_time": f'{date}T00:00:00Z',
+          "created_time": time,
           "post_to_fediverse": 'false',
           "tags": ["boardgames"]}
 
