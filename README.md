@@ -21,9 +21,9 @@ Only board games set as "owned" will be imported.  Expansions are never imported
 This can take many hours to run if the games are not known to your NeoDB instance, as the API requires a minimum 15 second delay to fetch from BGG.
 
 ## `-p` - this imports your plays
-Currently only the most recent page of plays is imported!!!!
-
 Imported plays are set as "followers only" to avoid spamming global feeds.
 
 Played games will be tagged with #boardgames - this shows as a personal tag but can be made public through the web interface.
+
+Note that any existing comments and tags associated with marks get overwritten/wiped.
 

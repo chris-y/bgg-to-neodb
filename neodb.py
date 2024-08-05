@@ -16,7 +16,7 @@ def call_api_get(app, auth, endpoint, data):
   #print(data)
   #print(r.status_code)
   if(r.status_code == 202):
-    print('Waiting 15s for response...')
+    print('  Waiting 15s for response...')
     time.sleep(15)
     r = call_api_get(app, auth, endpoint, data)
     return(r)

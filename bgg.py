@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import math
 import xmltodict
 import requests
 import neodb
@@ -45,10 +46,11 @@ def get_bgg_collection(user):
   r = get_bgg_coll(user)
   return xmltodict.parse(r.text)
 
-def get_plays(user):
-  data = { "username": user } # mindate=2024-MM-DD
+def get_plays(user, page):
+  data = { "username": user,
+           "page": page } # mindate=2024-MM-DD
   r = requests.get(f'https://boardgamegeek.com/xmlapi2/plays', params = data)
-  # gets 1 page, check total
+
   return xmltodict.parse(r.text)
 
 def get_bg(id):
@@ -67,7 +69,7 @@ def get_bg(id):
 
 def neodb_lookup_bgg_item(app, id):
     url = f'https://boardgamegeek.com/boardgame/{id}'
-    print(f'Lookup for {url}')
+    print(f'  (Lookup for {url})')
 
     return neodb.catalog_fetch(app, url)
 
@@ -96,14 +98,22 @@ def bgg_to_neodb_collection(user, app):
     neodb.collection_add_item(app, uuid, r['uuid'])
 
 def bgg_to_neodb_plays(user, app):
-  bgg_plays = get_plays(a['bgguser'])['plays']
-  print(f'{bgg_plays["@page"]}/{bgg_plays["@total"]}')
+  play_num = 0
+  bgg_plays = get_plays(a['bgguser'], 0)['plays']
+  pages = math.ceil(int(bgg_plays["@total"])/100)
+  page = pages
+  # work backwards so we insert the oldest plays first
+  while page > 0:
+    bgg_plays = get_plays(a['bgguser'], page)['plays']
+    for play in reversed(bgg_plays['play']):
+      play_num += 1
+      print(f'Importing {play_num} of {bgg_plays["@total"]}')
+      r = neodb_lookup_bgg_item(app, play['item']['@objectid'])
+      item = r['uuid']
+      neodb.mark_item(app, item, 'progress', play['@date'])
+      neodb.mark_item(app, item, 'complete', play['@date'])
 
-  for play in bgg_plays['play']:
-    r = neodb_lookup_bgg_item(app, play['item']['@objectid'])
-    item = r['uuid']
-    neodb.mark_item(app, item, 'progress', play['@date'])
-    neodb.mark_item(app, item, 'complete', play['@date'])
+    page -= 1
 
 ### start ###
 a = get_args()
