@@ -41,7 +41,8 @@ def register_app(instance, cfgfile):
       app = json.load(f)
       if(app['instance'] != instance):
         print(f'Instance specified on command line ({instance}) does not match that where app is registered ({app["instance"]}).\nIf you want to change your instance please delete {cfgfile} or specify a different config with -c')
-        sys.exit(1)
+        if instance != "neodb.social":
+          sys.exit(1)
       return(app)
   except Exception as e:
     print(f'error reading app data: {e}')
