@@ -36,7 +36,7 @@ def get_bgg_coll(user):
     if r.status_code in (500,503,202):
       print('waiting 5s for response')
       time.sleep(5)
-      r = get_bgg_collection(user)
+      r = get_bgg_coll(user)
     else:
       print(f'unknown status getting collection {r.status_code}: {r.text}')
       sys.exit(1)
