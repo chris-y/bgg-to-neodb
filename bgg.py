@@ -19,6 +19,8 @@ def get_args():
   parser.add_argument("-c", "--configfile", help="Config filename", default="~/.config/bgg-to-neodb.json")
   parser.add_argument("-b", "--boardgames", help="Import boardgames to NeoDB collection", action="store_true")
   parser.add_argument("-p", "--plays", help="Import plays to NeoDB", action="store_true")
+  parser.add_argument("-l", "--last-plays-only", help="Only import most recent 100 plays", action="store_true")
+
   args = parser.parse_args()
   a = vars(args)
 
@@ -98,17 +100,24 @@ def bgg_to_neodb_collection(user, app):
     r = neodb_lookup_bgg_item(app, bg['@objectid'])
     neodb.collection_add_item(app, uuid, r['uuid'])
 
-def bgg_to_neodb_plays(user, app):
+def bgg_to_neodb_plays(user, app, last_page_only):
   play_num = 0
-  bgg_plays = get_plays(a['bgguser'], 0)['plays']
-  pages = math.ceil(int(bgg_plays["@total"])/100)
+  bgg_plays = get_plays(user, 0)['plays']
+
+  if last_page_only is True:
+    pages = 1
+    total = 100
+  else:
+    total = int(bgg_plays["@total"])
+    pages = math.ceil(total/100)
+
   page = pages
   # work backwards so we insert the oldest plays first
   while page > 0:
-    bgg_plays = get_plays(a['bgguser'], page)['plays']
+    bgg_plays = get_plays(user, page)['plays']
     for play in reversed(bgg_plays['play']):
       play_num += 1
-      print(f'Importing {play_num} of {bgg_plays["@total"]}')
+      print(f'Importing {play_num} of {total}')
       r = neodb_lookup_bgg_item(app, play['item']['@objectid'])
       item = r['uuid']
       date = datetime.strptime(play['@date'], "%Y-%m-%d")
@@ -136,5 +145,11 @@ if a['boardgames'] is True:
 
 if a['plays'] is True:
   print('Importing plays')
+  if a['last_plays_only'] is True:
+    print('(most recent only)')
+    last_page_only = True
+  else:
+    last_page_only = False
   print('---------------')
-  bgg_to_neodb_plays(a['bgguser'], app)
+  bgg_to_neodb_plays(a['bgguser'], app, last_page_only)
+

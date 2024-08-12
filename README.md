@@ -6,7 +6,7 @@ You can add the required modules to Python with `pip -r requirements.txt` before
 
 Usage:
 ```
-python3 bgg.py --instance=neodb.social -p -b bgguser
+python3 bgg.py --instance=neodb.social -l -p -b bgguser
 ```
 
 The instance can be specified using `--instance` (or `-i`).  The bgguser is required - this will be your username on BGG. 
@@ -26,4 +26,6 @@ Imported plays are set as "public"
 Played games will be tagged with #boardgames - this shows as a personal tag but can be made public through the web interface.
 
 Note that any existing comments and tags associated with marks get overwritten/wiped.
+
+# `-l` - this restricts to the last 100 plays
 
